@@ -1,0 +1,25 @@
+{
+  "rows_scored": 30000,
+  "confidence_tier_counts": {
+    "low": 13639,
+    "medium": 11242,
+    "high": 5119
+  },
+  "suggested_action_counts": {
+    "no_action": 13639,
+    "monitor_closely": 11242,
+    "review_priority": 3878,
+    "refresh_and_review_ctr": 1211,
+    "expand_and_refresh": 23,
+    "refresh": 7
+  },
+  "high_tier_model_flagged_share": 0.758,
+  "monitoring_baseline": {
+    "base_rate": 0.542,
+    "days_since_last_update_104_share": 0.292,
+    "search_volume_missing_share": 0.082,
+    "word_count_missing_share": 0.257,
+    "honest_precision_at_50": 0.7,
+    "baseline_precision_at_50": 0.46
+  }
+}
