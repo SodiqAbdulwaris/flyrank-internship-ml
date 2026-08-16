@@ -1,0 +1,47 @@
+{
+  "sample": {
+    "rows": 30000,
+    "clients": 32,
+    "declining_rate": 0.542
+  },
+  "split": {
+    "test_pages": 7115,
+    "test_clients": 8,
+    "base_rate_test": 0.517
+  },
+  "results": {
+    "baseline_rules": {
+      "roc_auc": null,
+      "avg_precision": null,
+      "precision_at_20": 0.65,
+      "precision_at_50": 0.46
+    },
+    "logistic_regression": {
+      "roc_auc": 0.61,
+      "avg_precision": 0.605,
+      "precision_at_20": 0.8,
+      "precision_at_50": 0.7
+    },
+    "random_forest": {
+      "roc_auc": 0.603,
+      "avg_precision": 0.587,
+      "precision_at_20": 0.55,
+      "precision_at_50": 0.56
+    }
+  },
+  "random_split_precision_at_50": 0.86,
+  "leakage_attack_precision_at_50": 1.0,
+  "action_queue_tier_counts": {
+    "low": 13639,
+    "medium": 11242,
+    "high": 5119
+  },
+  "high_tier_model_flagged_share": 0.758,
+  "top_rf_features": {
+    "days_with_impressions": 0.149,
+    "log_impressions_90d": 0.13,
+    "avg_position": 0.103,
+    "content_age_days": 0.087,
+    "char_count": 0.046
+  }
+}

@@ -1,0 +1,26 @@
+{
+  "base_rate_test": 0.517,
+  "comparison": [
+    {
+      "model": "baseline_rules",
+      "roc_auc": null,
+      "avg_precision": null,
+      "precision_at_20": 0.65,
+      "precision_at_50": 0.46
+    },
+    {
+      "model": "logistic_regression",
+      "roc_auc": 0.61,
+      "avg_precision": 0.605,
+      "precision_at_20": 0.8,
+      "precision_at_50": 0.7
+    },
+    {
+      "model": "random_forest",
+      "roc_auc": 0.603,
+      "avg_precision": 0.587,
+      "precision_at_20": 0.55,
+      "precision_at_50": 0.56
+    }
+  ]
+}
