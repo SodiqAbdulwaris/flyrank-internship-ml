@@ -1,0 +1,463 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Content Refresh Prioritization — Which Page Should an Editor Review First?</title>
+<meta name="description" content="A decision-support ranking model for content refresh prioritization, built and validated on the FlyRank ML Internship dataset.">
+<style>
+  :root {
+    --ink: #16232a;
+    --ink-soft: #45545c;
+    --paper: #fdfcfa;
+    --panel: #f4f1ec;
+    --line: #e2ddd3;
+    --accent: #6f4e7c;
+    --accent-soft: #eee7f1;
+    --good: #2f7a4f;
+    --warn: #a6631a;
+    --max-width: 760px;
+  }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--paper);
+    color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  header.hero {
+    background: linear-gradient(180deg, var(--panel), var(--paper));
+    border-bottom: 1px solid var(--line);
+    padding: 3rem 1.25rem 2.5rem;
+  }
+  .wrap {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 1.25rem;
+  }
+  header.hero .wrap { padding: 0; }
+  .kicker {
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    color: var(--accent);
+    font-weight: 700;
+    margin: 0 0 0.75rem;
+  }
+  h1 {
+    font-size: clamp(1.6rem, 4vw, 2.3rem);
+    line-height: 1.25;
+    margin: 0 0 0.9rem;
+    letter-spacing: -0.01em;
+  }
+  .dek {
+    font-size: 1.08rem;
+    color: var(--ink-soft);
+    margin: 0 0 1.4rem;
+    max-width: 62ch;
+  }
+  .byline {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    border-top: 1px solid var(--line);
+    padding-top: 0.9rem;
+  }
+  .byline a { color: var(--accent); }
+  main { padding: 2.5rem 0 1rem; }
+  section {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 0 1.25rem 2.6rem;
+  }
+  h2 {
+    font-size: 1.4rem;
+    margin: 0 0 0.9rem;
+    padding-top: 0.4rem;
+    border-top: 3px solid var(--accent);
+    padding-top: 0.7rem;
+    letter-spacing: -0.01em;
+  }
+  h3 {
+    font-size: 1.05rem;
+    margin: 1.4rem 0 0.6rem;
+    color: var(--ink);
+  }
+  p { margin: 0 0 1rem; }
+  ul, ol { margin: 0 0 1rem; padding-left: 1.3rem; }
+  li { margin-bottom: 0.4rem; }
+  code {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    padding: 0.1em 0.4em;
+    font-size: 0.88em;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  pre {
+    background: #1c2529;
+    color: #e9edee;
+    padding: 1rem 1.1rem;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.85rem;
+  }
+  pre code { background: none; border: none; padding: 0; color: inherit; }
+  strong { color: var(--ink); }
+  .lede {
+    font-size: 1.02rem;
+  }
+  .callout {
+    background: var(--accent-soft);
+    border: 1px solid #ddd0e2;
+    border-radius: 10px;
+    padding: 1rem 1.2rem;
+    margin: 1.2rem 0;
+    font-size: 0.96rem;
+  }
+  .callout.warn { background: #f7ead9; border-color: #e6cca4; }
+  figure {
+    margin: 1.4rem 0 1.6rem;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+  }
+  figure img { width: 100%; height: auto; display: block; border-radius: 6px; }
+  figcaption {
+    font-size: 0.88rem;
+    color: var(--ink-soft);
+    margin-top: 0.7rem;
+    padding-top: 0.6rem;
+    border-top: 1px dashed var(--line);
+  }
+  .table-wrap {
+    overflow-x: auto;
+    margin: 1rem 0 1.4rem;
+    -webkit-overflow-scrolling: touch;
+  }
+  table {
+    width: 100%;
+    min-width: 480px;
+    border-collapse: collapse;
+    margin: 0;
+    font-size: 0.92rem;
+  }
+  th, td {
+    text-align: left;
+    padding: 0.5rem 0.7rem;
+    border-bottom: 1px solid var(--line);
+  }
+  th { color: var(--ink-soft); font-weight: 600; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 0.03em; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+  tr.win td { font-weight: 700; color: var(--good); }
+  .stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.8rem;
+    margin: 1rem 0 1.6rem;
+  }
+  .stat {
+    flex: 1 1 140px;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 0.9rem 1rem;
+  }
+  .stat .n { font-size: 1.5rem; font-weight: 700; color: var(--accent); display: block; }
+  .stat .l { font-size: 0.8rem; color: var(--ink-soft); }
+  .tag {
+    display: inline-block;
+    font-size: 0.72rem;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+    padding: 0.15em 0.55em;
+    border-radius: 999px;
+    background: var(--accent-soft);
+    color: var(--accent);
+    margin-right: 0.3rem;
+  }
+  footer {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    padding: 2rem 1.25rem 3rem;
+    border-top: 1px solid var(--line);
+    font-size: 0.9rem;
+    color: var(--ink-soft);
+  }
+  footer a { color: var(--accent); }
+  a { color: var(--accent); }
+  @media (max-width: 480px) {
+    header.hero { padding: 2.2rem 1rem 1.8rem; }
+    section { padding: 0 1rem 2.2rem; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="wrap">
+    <p class="kicker">FlyRank ML Internship &middot; Capstone Research Paper</p>
+    <h1>Which Page Should an Editor Review First?</h1>
+    <p class="dek">
+      A decision-support model for content refresh prioritization: why the obvious signal
+      (search volume) doesn't predict traffic, why a transparent staleness rule only ever
+      flags 17 of 30,000 pages, and how a simple model beats it honestly — measured on
+      clients it never saw.
+    </p>
+    <p class="byline">By Sodiq Abdulwaris &middot; FlyRank ML Internship, 2026 &middot;
+      <a href="https://github.com/SodiqAbdulwaris/flyrank-internship-ml">repo &amp; notebooks</a>
+    </p>
+  </div>
+</header>
+
+<main>
+
+<section id="abstract">
+  <h2>Abstract</h2>
+  <p class="lede">
+    Which of a client's existing pages should an SEO editor review first, when 54.2% of pages
+    in this sample are declining and the obvious signal — keyword search volume — barely
+    correlates with actual traffic (r&nbsp;=&nbsp;0.001)? Using FlyRank's 30,000-page anonymized
+    starter export (32 clients, trailing 90-day search and analytics metrics), a Logistic
+    Regression model trained on pre-decision signals only — visibility, position, age, content
+    depth, never the trend fields the label is built from — ranks declining pages at
+    <strong>Precision@50&nbsp;=&nbsp;0.70</strong> on a held-out set of 8 clients the model never
+    trained on, against a base rate of 0.517 and a transparent staleness rule that manages 0.46.
+    The output is a three-tier, reason-coded review queue an editor can act on directly —
+    decision-support for where to spend a limited review hour, not a verdict on any one page.
+  </p>
+</section>
+
+<section id="problem">
+  <h2>1. The Problem</h2>
+  <p>
+    Editors have limited hours. A client's page library grows every month, and only some of it
+    is quietly losing search traffic. The instinct is to chase the pages with the highest
+    keyword search volume — but in this portfolio, search volume barely moves with actual
+    impressions (<code>corr(search_volume, impressions_90d) = 0.001</code>). Volume tells you
+    almost nothing about which page needs attention today.
+  </p>
+  <p>
+    <strong>The decision this supports:</strong> which page an editor opens first in a weekly
+    review backlog. <strong>The action:</strong> refresh, expand thin content, fix a weak
+    click-through rate, or simply keep watching — the editor decides; this work only orders the
+    queue. <strong>The cost of a wrong call:</strong> a false flag wastes an hour on a healthy
+    page; a missed decline lets a traffic-losing page sit untouched, and because misses compound,
+    the method needs to favor catching real decliners near the top of the list without burying
+    editors in false alarms.
+  </p>
+  <p>
+    Why does this need a model at all, rather than one clean if-statement? Because the honest
+    rule turns out to be too narrow to matter past its first few hits — which is exactly what
+    Section 3 shows.
+  </p>
+</section>
+
+<section id="data">
+  <h2>2. Data</h2>
+  <p>
+    The analysis uses FlyRank's anonymized starter export:
+    <strong>30,000 rows</strong>, one row per pseudonymized content page, across
+    <strong>32 pseudonymized clients</strong>, with trailing 90-day search and analytics metrics
+    as of one export date. (FlyRank's full warehouse holds 519,606 items across 104 clients;
+    this capstone works the smaller teaching slice, and every number below describes that
+    slice, not the whole portfolio.)
+  </p>
+  <h3>What was deliberately left out, and why</h3>
+  <ul>
+    <li><code>trend_direction</code>, <code>trend_pct</code> — these define the label itself
+      (a page counts as "declining" when <code>trend_direction == "down"</code>), so they can
+      never be inputs.</li>
+    <li><code>impressions_last_30d</code> / <code>prev_30d</code> and their click/session
+      siblings — recomputing <code>trend_pct</code> directly from these columns matched the
+      stored value 100% of the time. They aren't just correlated with the label; they
+      <em>are</em> its formula.</li>
+    <li><code>provider_used</code>, <code>model_used</code> — describe how a page was written,
+      not how it's performing.</li>
+    <li>Raw <code>impressions_90d</code> / <code>clicks_90d</code> / <code>sessions_90d</code> /
+      <code>ai_sessions_90d</code> — replaced by their <code>log1p</code> versions, since traffic
+      is heavy-tailed.</li>
+    <li><code>content_id</code>, <code>client_id</code> — used only to group the train/test
+      split by client, never as model inputs.</li>
+  </ul>
+  <div class="callout">
+    <strong>Leakage, proven not assumed.</strong> Adding <code>trend_pct</code> back into an
+    otherwise-honest feature set as a deliberate attack test pushed Precision@50 from 0.70 to
+    <strong>1.00</strong> and ROC AUC to 0.999 on the identical split — confirming both that the
+    excluded column really is that leaky, and that the evaluation setup actually catches a real
+    leak rather than quietly missing one.
+  </div>
+  <p>No client names, domains, URLs, or raw search queries appear anywhere in this dataset,
+    this repository, or this page.</p>
+</section>
+
+<section id="methodology">
+  <h2>3. Methodology</h2>
+  <h3>Baseline: a rule a human can read</h3>
+  <p>
+    A page is worth reviewing if it's <strong>stale</strong>
+    (<code>days_since_last_update &ge; 180</code>) and still <strong>visible</strong>
+    (<code>impressions_90d &ge; 500</code>) — rank the pages that pass both by exposure. Simple
+    enough to say in one breath, and 94% correct on the pages it actually flags.
+  </p>
+  <p>
+    The catch surfaced by a hand review of its own top 20: only <strong>17 of 30,000 pages</strong>
+    ever pass both conditions. 99.4% of this slice was updated within 180 days (median: 20 days),
+    so the threshold almost never fires. Every rank past 17 is an arbitrary zero-score tie, not a
+    real recommendation — which is why this rule, honest as it is, is meant to be beaten.
+  </p>
+  <h3>Model: readable first, complex only if it earns it</h3>
+  <p>
+    Logistic Regression, then Random Forest — both scored by predicted probability at
+    Precision@K, since the deliverable is a ranking, not a single yes/no call. Eighteen numeric
+    features (visibility, position, age, content depth, plus missingness flags so a blank
+    <code>search_volume</code> or <code>word_count</code> — which goes blank by content type,
+    not at random — isn't silently read as zero) and eight one-hot categorical features, all
+    drawn from the exclusion-checked feature set in Section 2.
+  </p>
+  <h3>Validation: held out by client, not by row</h3>
+  <p>
+    <code>GroupShuffleSplit(test_size=0.25, random_state=42)</code> grouped on
+    <code>client_id</code> — 24 clients train, 8 clients test, so no client's pages appear on
+    both sides. This matters more than it sounds: the identical model scored on a random,
+    non-grouped split instead reads Precision@50&nbsp;=&nbsp;0.86 — 16 points higher — because
+    31 of 32 clients leak across train and test under a random split. The number this paper
+    reports (0.70) is the grouped one.
+  </p>
+  <figure>
+    <img src="assets/split_honesty.svg" alt="Bar chart comparing Precision at 50 under a grouped client-holdout split (0.70) versus a random row-level split (0.86).">
+    <figcaption>Same model, same data, two splits. The 16-point gap is memorization the
+      grouped split prevents — not a second, better model.</figcaption>
+  </figure>
+</section>
+
+<section id="results">
+  <h2>4. Results</h2>
+  <p>Logistic Regression wins outright over both the baseline and Random Forest, on the same
+    8-client held-out test set (7,115 pages, base rate 0.517):</p>
+  <div class="table-wrap">
+  <table>
+    <thead>
+      <tr><th>Model</th><th class="num">ROC AUC</th><th class="num">Avg. precision</th><th class="num">Precision@20</th><th class="num">Precision@50</th></tr>
+    </thead>
+    <tbody>
+      <tr><td>Baseline rule</td><td class="num">—</td><td class="num">—</td><td class="num">0.65</td><td class="num">0.46</td></tr>
+      <tr class="win"><td>Logistic Regression</td><td class="num">0.610</td><td class="num">0.605</td><td class="num">0.80</td><td class="num">0.70</td></tr>
+      <tr><td>Random Forest</td><td class="num">0.603</td><td class="num">0.587</td><td class="num">0.55</td><td class="num">0.56</td></tr>
+    </tbody>
+  </table>
+  </div>
+  <figure>
+    <img src="assets/precision_comparison.svg" alt="Bar chart comparing Precision at 50 across the base rate (0.517), baseline rule (0.46), Logistic Regression (0.70), and Random Forest (0.56).">
+    <figcaption>Logistic Regression is the only model that clearly separates from the base
+      rate at the top of the queue.</figcaption>
+  </figure>
+  <h3>Where it's wrong</h3>
+  <p>
+    False positives cluster on moderate-traffic pages that are actually trending up or holding
+    steady — they match every pre-decision signal a real decliner would show, but the model has
+    no access to trend history (excluded as leakage), so it can't see which way they're actually
+    moving. False negatives cluster on very-low-traffic old pages that genuinely are declining
+    but carry almost no signal to separate from noise.
+  </p>
+  <p>
+    Top features — <code>days_with_impressions</code> (0.149), <code>log_impressions_90d</code>
+    (0.130), <code>avg_position</code> (0.103), <code>content_age_days</code> (0.087) — are all
+    plausible correlates of a page's trajectory, and none dominates suspiciously. That matters:
+    a single feature owning nearly all the importance is usually a sign of leakage, and that
+    isn't what this shows.
+  </p>
+</section>
+
+<section id="limitations">
+  <h2>5. Limitations</h2>
+  <ul>
+    <li><strong>No real future outcome.</strong> The label is a proxy from one 90-day snapshot's
+      30-vs-30-day comparison, not an observed outcome after anyone acted. Nothing here shows
+      that refreshing a flagged page actually recovers it.</li>
+    <li><strong>A sample, not the population.</strong> 30,000 pages / 32 clients here versus a
+      documented full warehouse of 519,606 items / 104 clients — these rates describe this
+      teaching slice, not every client.</li>
+    <li><strong>Client-specific memorization.</strong> The 0.86-vs-0.70 split gap shows part of
+      what the model knows is pattern specific to its 24 training clients. A genuinely new
+      client may score below the 0.70 headline.</li>
+    <li><strong>Feedback loop.</strong> Once editors act on this queue, refreshed pages stop
+      being an untouched observational sample. A future retrain on post-intervention data risks
+      learning the review policy instead of the content — a risk to monitor, not one this
+      analysis can rule out on its own.</li>
+    <li><strong>No causal claims.</strong> No experiment, no randomization, no control group.
+      Everything here is observed, directional, decision-support — never "refreshing this page
+      will improve traffic."</li>
+  </ul>
+</section>
+
+<section id="recommendations">
+  <h2>6. Ranked Recommendations</h2>
+  <p>
+    The winning model, refit on all 30,000 pages, sorted into three tiers by its own
+    probability:
+  </p>
+  <div class="stat-row">
+    <div class="stat"><span class="n">5,119</span><span class="l">high confidence (17.1%) — review priority</span></div>
+    <div class="stat"><span class="n">11,242</span><span class="l">medium (37.5%) — monitor</span></div>
+    <div class="stat"><span class="n">13,639</span><span class="l">low (45.5%) — no action</span></div>
+  </div>
+  <figure>
+    <img src="assets/tier_distribution.svg" alt="Bar chart of the 30,000-page queue split into high, medium, and low confidence tiers.">
+    <figcaption>The review queue by confidence tier — roughly one in six pages lands in the
+      priority band.</figcaption>
+  </figure>
+  <p>
+    Every flagged page carries a reason code — <code>stale_but_visible</code>,
+    <code>thin_content</code>, or <code>page_one_low_ctr</code> where a simple rule fires. But
+    <strong>75.8% of high-tier pages</strong> pass none of those simple rules; they're tagged
+    <code>model_flagged</code> instead — an honest label for "the model's combined read of many
+    weak signals says review this, but no single rule explains why." That's precisely the
+    model's edge over the rule baseline in Section 3, and precisely why a human closes the loop,
+    not a machine.
+  </p>
+  <h3>Before acting on a flagged page</h3>
+  <ul>
+    <li>Confirm it isn't already scheduled for retirement or consolidation.</li>
+    <li>For <code>model_flagged</code> rows especially, read the page — no simple rule explains
+      the flag, so a human sanity check matters more here.</li>
+    <li>Confirm the export this queue was built from is recent.</li>
+  </ul>
+  <div class="callout warn">
+    <strong>Never automate:</strong> auto-publishing, auto-redirecting, or auto-deleting content
+    from this queue; exposing a page's model probability to a client as a verdict; using this
+    label to judge a content creator's or editor's performance.
+  </div>
+</section>
+
+<section id="reproducibility">
+  <h2>7. Reproducibility</h2>
+  <p>
+    Python 3.11, <code>pip install -r requirements.txt</code>. <code>random_state=42</code>
+    everywhere a seed applies — the split, Logistic Regression, and Random Forest.
+  </p>
+  <pre><code>pip install -r requirements.txt
+jupyter execute work/notebooks/capstone.ipynb --inplace</code></pre>
+  <p>
+    That single command rebuilds the feature set from the raw export, refits the baseline and
+    both models on the exact grouped split above, re-runs the leakage attack test, and
+    regenerates every chart and number on this page. The receipts are committed in the repo at
+    <code>work/outputs/capstone_metrics.json</code> and <code>docs/assets/*.svg</code> — this
+    is checkable, not taken on faith. Full write-up, notebooks, and data contract:
+    <a href="https://github.com/SodiqAbdulwaris/flyrank-internship-ml">github.com/SodiqAbdulwaris/flyrank-internship-ml</a>.
+  </p>
+</section>
+
+</main>
+
+<footer>
+  <p>Built on the <a href="https://flyrank.ai">FlyRank ML Internship dataset</a>.</p>
+  <p>Every number on this page is observed, measured, or decision-support — never a causal or
+    predictive guarantee. Precision@K is always reported next to its base rate.</p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="960" height="520" viewBox="0 0 960 520">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<text x="480.0" y="34" text-anchor="middle" font-family="Arial" font-size="24" fill="#16232a">Precision@50: grouped (honest) vs random split</text>
+<text x="178" y="196.8" text-anchor="end" font-family="Arial" font-size="13" fill="#27343b">grouped client-holdout</text>
+<rect x="190" y="70.0" width="511.0" height="195.0" fill="#6F4E7C" rx="4"/>
+<text x="709.0" y="196.8" font-family="Arial" font-size="13" fill="#27343b">0.7</text>
+<text x="178" y="401.8" text-anchor="end" font-family="Arial" font-size="13" fill="#27343b">random row-level split</text>
+<rect x="190" y="275.0" width="627.8" height="195.0" fill="#6F4E7C" rx="4"/>
+<text x="825.8" y="401.8" font-family="Arial" font-size="13" fill="#27343b">0.86</text>
+</svg>
