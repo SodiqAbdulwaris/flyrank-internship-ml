@@ -146,11 +146,26 @@ def percentile_rank(series: pd.Series) -> pd.Series:
 
 
 def precision_at_k(y_true: Iterable[int], scores: Iterable[float], k: int) -> float:
+    """Return tie-aware expected precision among the top-k scored rows.
+
+    When a score tie crosses the cutoff, no tied row is a more defensible pick than another.
+    Use the tied group's observed positive rate for the remaining slots instead of allowing
+    input order or a sorting implementation to choose the reported metric.
+    """
     frame = pd.DataFrame({"y": list(y_true), "score": list(scores)})
-    if frame.empty:
+    if frame.empty or k <= 0:
         return 0.0
-    top = frame.sort_values("score", ascending=False).head(min(k, len(frame)))
-    return float(top["y"].mean()) if len(top) else 0.0
+
+    frame["score"] = pd.to_numeric(frame["score"], errors="coerce").fillna(-np.inf)
+    limit = min(k, len(frame))
+    cutoff = frame["score"].nlargest(limit).iloc[-1]
+    above_cutoff = frame["score"] > cutoff
+    at_cutoff = frame["score"] == cutoff
+
+    certain_positives = float(frame.loc[above_cutoff, "y"].sum())
+    remaining_slots = limit - int(above_cutoff.sum())
+    expected_tied_positives = remaining_slots * float(frame.loc[at_cutoff, "y"].mean())
+    return (certain_positives + expected_tied_positives) / limit
 
 
 def safe_float(value: object, default: float = 0.0) -> float:

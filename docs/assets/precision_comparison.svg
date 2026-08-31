@@ -5,8 +5,8 @@
 <rect x="190" y="70.0" width="377.1" height="92.5" fill="#6F4E7C" rx="4"/>
 <text x="575.1" y="130.1" font-family="Arial" font-size="13" fill="#27343b">0.517</text>
 <text x="178" y="232.6" text-anchor="end" font-family="Arial" font-size="13" fill="#27343b">baseline rule</text>
-<rect x="190" y="172.5" width="335.8" height="92.5" fill="#6F4E7C" rx="4"/>
-<text x="533.8" y="232.6" font-family="Arial" font-size="13" fill="#27343b">0.46</text>
+<rect x="190" y="172.5" width="397.9" height="92.5" fill="#6F4E7C" rx="4"/>
+<text x="595.9" y="232.6" font-family="Arial" font-size="13" fill="#27343b">0.545</text>
 <text x="178" y="335.1" text-anchor="end" font-family="Arial" font-size="13" fill="#27343b">logistic regression</text>
 <rect x="190" y="275.0" width="511.0" height="92.5" fill="#6F4E7C" rx="4"/>
 <text x="709.0" y="335.1" font-family="Arial" font-size="13" fill="#27343b">0.7</text>

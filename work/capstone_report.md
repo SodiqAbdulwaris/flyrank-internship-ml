@@ -14,7 +14,7 @@ clients, trailing 90-day search and analytics metrics), a Logistic Regression mo
 pre-decision signals only (visibility, position, age, content depth — never the trend fields
 the label is built from) ranks declining pages at Precision@50 = 0.70 on a held-out set of 8
 clients the model never trained on, against a base rate of 0.517 and a transparent staleness
-rule that manages 0.46. The output is a three-tier, reason-coded review queue an editor can act
+rule that manages 0.545. The output is a three-tier, reason-coded review queue an editor can act
 on directly — decision-support for where to spend a limited review hour, not a verdict on any
 one page.
 
@@ -72,9 +72,12 @@ it actually flags.
 **The catch, found by hand-reviewing the top 20:** only 17 of 30,000 pages ever pass both
 conditions — 99.4% of this slice was updated within 180 days (median 20 days), so the threshold
 barely fires. Everything past rank 17 is a zero-score tie ordered by row position, not by the
-rule. On the client-holdout test set this baseline reads Precision@20 = 0.65, Precision@50 =
-0.46 (base rate 0.517) — a number substantially inflated by lucky ties past rank 17, which is
-exactly why it's an honestly beatable baseline rather than a strong one.
+rule. Only 3 held-out pages receive a positive score, so 47 of the top-50 slots land inside the
+zero-score tie. The evaluation therefore reports expected Precision@K across that tied group,
+instead of letting CSV order or a pandas sorting implementation choose the result. On the
+client-holdout test set this gives Precision@20 = 0.589 and Precision@50 = 0.545 (base rate
+0.517): deterministic, slightly above random selection, and honestly limited by the rule's low
+coverage.
 
 ## 4. Model / analysis
 
@@ -111,7 +114,7 @@ generalizable signal.
 
 | Model | ROC AUC | Avg. precision | Precision@20 | Precision@50 |
 |---|---:|---:|---:|---:|
-| Baseline rule | — | — | 0.65 | 0.46 |
+| Baseline rule | — | — | 0.589 | 0.545 |
 | Logistic Regression | 0.610 | 0.605 | **0.80** | **0.70** |
 | Random Forest | 0.603 | 0.587 | 0.55 | 0.56 |
 

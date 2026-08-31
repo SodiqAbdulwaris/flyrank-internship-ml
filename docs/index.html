@@ -225,7 +225,7 @@
     Regression model trained on pre-decision signals only — visibility, position, age, content
     depth, never the trend fields the label is built from — ranks declining pages at
     <strong>Precision@50&nbsp;=&nbsp;0.70</strong> on a held-out set of 8 clients the model never
-    trained on, against a base rate of 0.517 and a transparent staleness rule that manages 0.46.
+    trained on, against a base rate of 0.517 and a transparent staleness rule that manages 0.545.
     The output is a three-tier, reason-coded review queue an editor can act on directly —
     decision-support for where to spend a limited review hour, not a verdict on any one page.
   </p>
@@ -309,6 +309,12 @@
     so the threshold almost never fires. Every rank past 17 is an arbitrary zero-score tie, not a
     real recommendation — which is why this rule, honest as it is, is meant to be beaten.
   </p>
+  <p>
+    On the held-out clients, only 3 pages receive a positive rule score; 47 of the top-50 slots
+    therefore fall inside the zero-score tie. Precision@K handles that cutoff tie by reporting
+    the tied group's expected hit rate instead of letting row order choose the result. The
+    deterministic baseline is 0.589 at Precision@20 and 0.545 at Precision@50.
+  </p>
   <h3>Model: readable first, complex only if it earns it</h3>
   <p>
     Logistic Regression, then Random Forest — both scored by predicted probability at
@@ -344,14 +350,14 @@
       <tr><th>Model</th><th class="num">ROC AUC</th><th class="num">Avg. precision</th><th class="num">Precision@20</th><th class="num">Precision@50</th></tr>
     </thead>
     <tbody>
-      <tr><td>Baseline rule</td><td class="num">—</td><td class="num">—</td><td class="num">0.65</td><td class="num">0.46</td></tr>
+      <tr><td>Baseline rule</td><td class="num">—</td><td class="num">—</td><td class="num">0.589</td><td class="num">0.545</td></tr>
       <tr class="win"><td>Logistic Regression</td><td class="num">0.610</td><td class="num">0.605</td><td class="num">0.80</td><td class="num">0.70</td></tr>
       <tr><td>Random Forest</td><td class="num">0.603</td><td class="num">0.587</td><td class="num">0.55</td><td class="num">0.56</td></tr>
     </tbody>
   </table>
   </div>
   <figure>
-    <img src="assets/precision_comparison.svg" alt="Bar chart comparing Precision at 50 across the base rate (0.517), baseline rule (0.46), Logistic Regression (0.70), and Random Forest (0.56).">
+    <img src="assets/precision_comparison.svg" alt="Bar chart comparing Precision at 50 across the base rate (0.517), baseline rule (0.545), Logistic Regression (0.70), and Random Forest (0.56).">
     <figcaption>Logistic Regression is the only model that clearly separates from the base
       rate at the top of the queue.</figcaption>
   </figure>

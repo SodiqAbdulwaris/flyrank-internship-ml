@@ -20,6 +20,6 @@
     "search_volume_missing_share": 0.082,
     "word_count_missing_share": 0.257,
     "honest_precision_at_50": 0.7,
-    "baseline_precision_at_50": 0.46
+    "baseline_precision_at_50": 0.545
   }
 }

@@ -4,6 +4,6 @@
   "test_clients": 8,
   "test_pages": 7115,
   "base_rate_test": 0.517,
-  "precision_at_20_client_holdout": 0.65,
-  "precision_at_50_client_holdout": 0.46
+  "precision_at_20_client_holdout": 0.589,
+  "precision_at_50_client_holdout": 0.545
 }

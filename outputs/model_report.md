@@ -17,7 +17,7 @@ Best model: `random_forest` selected by `precision_at_50`.
 
 | Model | ROC AUC | Avg precision | Precision@50 | Recall | F1 |
 |---|---:|---:|---:|---:|---:|
-| decision_tree | 0.742 | 0.575 | 0.620 | 0.716 | 0.634 |
+| decision_tree | 0.742 | 0.575 | 0.615 | 0.716 | 0.634 |
 | logistic_regression | 0.700 | 0.522 | 0.400 | 0.567 | 0.566 |
 | random_forest | 0.747 | 0.610 | 0.680 | 0.741 | 0.638 |
 | baseline_rules | 0.627 | 0.468 | 0.240 | - | - |
